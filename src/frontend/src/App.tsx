@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSoundEngine } from "./hooks/useSoundEngine";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ function SoundToggle({
         zIndex: 2,
         transition: "background 0.15s",
         flexShrink: 0,
+        touchAction: "manipulation",
       }}
     >
       {soundOn ? "🔊" : "🔇"}
@@ -86,11 +88,12 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
           style={{
             fontSize: "clamp(2rem, 8vw, 2.8rem)",
             fontWeight: 900,
-            lineHeight: 1.1,
-            letterSpacing: "-0.01em",
+            lineHeight: 1.3,
+            letterSpacing: "0.02em",
             color: "oklch(0.86 0.18 88)",
             fontFamily: '"Noto Sans Kannada", sans-serif',
             textShadow: "0 0 30px oklch(0.82 0.16 85 / 0.4)",
+            overflow: "visible",
           }}
         >
           ಸಿನಿಮಾ ಹುಡುಗ
@@ -102,8 +105,10 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
             fontSize: "clamp(0.75rem, 3vw, 0.95rem)",
             fontWeight: 500,
             letterSpacing: "0.06em",
+            lineHeight: 1.7,
             color: "oklch(0.6 0.01 95)",
             fontFamily: '"Noto Sans Kannada", sans-serif',
+            overflow: "visible",
           }}
         >
           ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ
@@ -115,262 +120,191 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
 // ── Question Database ──────────────────────────────────────────────────────
 const QUESTIONS: Question[] = [
-  // Level 1 – Recent Movies
+  // ಹಂತ 1 – ಇತ್ತೀಚಿನ ಸಿನಿಮಾ
   {
-    question:
-      "Which Kannada movie starred Yash and became a pan-India blockbuster?",
-    options: ["KGF", "Tagaru", "Ugramm", "Ricky"],
+    question: "ಕೆಜಿಎಫ್ ಚಿತ್ರದಲ್ಲಿ ರಾಕಿ ಪಾತ್ರವನ್ನು ನಿರ್ವಹಿಸಿದವರು ಯಾರು?",
+    options: ["ರಿಷಬ್ ಶೆಟ್ಟಿ", "ಯಶ್", "ಸುಧೀಪ್", "ದರ್ಶನ್"],
+    correctIndex: 1,
+    level: 1,
+  },
+  {
+    question: "ಕಾಂತಾರ ಚಿತ್ರವನ್ನು ನಿರ್ದೇಶಿಸಿದವರು ಯಾರು?",
+    options: ["ಪ್ರಶಾಂತ್ ನೀಲ್", "ರಿಷಬ್ ಶೆಟ್ಟಿ", "ರಕ್ಷಿತ್ ಶೆಟ್ಟಿ", "ಗಣೇಶ್"],
+    correctIndex: 1,
+    level: 1,
+  },
+  {
+    question: "777 ಚಾರ್ಲಿ ಚಿತ್ರದಲ್ಲಿ ಯಾವ ಪ್ರಾಣಿಯ ಕಥೆ ಇದೆ?",
+    options: ["ಕುದುರೆ", "ನಾಯಿ", "ಹುಲಿ", "ಹಸು"],
+    correctIndex: 1,
+    level: 1,
+  },
+  {
+    question: "ವಿಕ್ರಾಂತ್ ರೋಣ ಚಿತ್ರದಲ್ಲಿ ನಾಯಕ ಯಾರು?",
+    options: ["ಯಶ್", "ಸುಧೀಪ್", "ದರ್ಶನ್", "ರಕ್ಷಿತ್ ಶೆಟ್ಟಿ"],
+    correctIndex: 1,
+    level: 1,
+  },
+  {
+    question: "ಜೇಮ್ಸ್ ಚಿತ್ರದಲ್ಲಿ ಅಭಿನಯಿಸಿದವರು ಯಾರು?",
+    options: ["ಯಶ್", "ಪುನೀತ್ ರಾಜ್‌ಕುಮಾರ್", "ಸುಧೀಪ್", "ಗಣೇಶ್"],
+    correctIndex: 1,
+    level: 1,
+  },
+  {
+    question: "ಲವ್ ಮಾಕ್‌ಟೇಲ್ ಚಿತ್ರದ ನಾಯಕ ಯಾರು?",
+    options: ["ಡಾರ್ಲಿಂಗ್ ಕೃಷ್ಣ", "ಯಶ್", "ಸುಧೀಪ್", "ದರ್ಶನ್"],
     correctIndex: 0,
     level: 1,
   },
   {
-    question: "Who directed the movie 'KGF Chapter 1'?",
-    options: ["Pawan Kumar", "Prashanth Neel", "Guruprasad", "Suri"],
-    correctIndex: 1,
-    level: 1,
-  },
-  {
-    question:
-      "Which 2022 Kannada film featured Rishab Shetty in the lead role?",
-    options: ["777 Charlie", "Kantara", "Vikrant Rona", "Bell Bottom"],
-    correctIndex: 1,
-    level: 1,
-  },
-  {
-    question: "Which actor is known as 'Rocking Star' in Kannada cinema?",
-    options: ["Darshan", "Yash", "Sudeep", "Ramya"],
-    correctIndex: 1,
-    level: 1,
-  },
-  {
-    question: "What was the name of Puneeth Rajkumar's last released film?",
-    options: ["Yuvarathnaa", "James", "Raajakumara", "Nata Sarvabhouma"],
-    correctIndex: 1,
-    level: 1,
-  },
-  {
-    question: "Which Kannada film had the tagline 'Real Star'?",
-    options: ["Eega", "Mugulu Nage", "Kotigobba 2", "Pailwaan"],
-    correctIndex: 3,
-    level: 1,
-  },
-  {
-    question: "In which year was 'KGF Chapter 2' released?",
-    options: ["2020", "2021", "2022", "2023"],
-    correctIndex: 2,
-    level: 1,
-  },
-  {
-    question: "Who played the villain in KGF Chapter 2?",
-    options: ["Sanjay Dutt", "Raveena Tandon", "Prakash Raj", "Yash"],
+    question: "ಯುವರತ್ನ ಚಿತ್ರದಲ್ಲಿ ನಾಯಕ ಯಾರು?",
+    options: ["ಪುನೀತ್ ರಾಜ್‌ಕುಮಾರ್", "ಯಶ್", "ದರ್ಶನ್", "ಗಣೇಶ್"],
     correctIndex: 0,
     level: 1,
   },
   {
-    question: "Which Kannada movie features the song 'Bombe Helutaite'?",
-    options: ["Mungaru Male", "Jothe Jotheyali", "Duniya", "Jogi"],
+    question: "ಅವನೇ ಶ್ರೀಮನ್ನಾರಾಯಣ ಚಿತ್ರದಲ್ಲಿ ನಾಯಕ ಯಾರು?",
+    options: ["ರಕ್ಷಿತ್ ಶೆಟ್ಟಿ", "ದರ್ಶನ್", "ಯಶ್", "ಗಣೇಶ್"],
     correctIndex: 0,
     level: 1,
   },
   {
-    question: "Kannada actor Sudeep is also known by which name?",
-    options: ["Power Star", "Real Star", "Kichcha", "Rocking Star"],
-    correctIndex: 2,
-    level: 1,
-  },
-  {
-    question:
-      "Which recent Kannada film stars Rakshit Shetty as a fisherman fighting a mythical entity?",
-    options: [
-      "Avane Srimannarayana",
-      "777 Charlie",
-      "Kantara",
-      "Ulidavaru Kandanthe",
-    ],
-    correctIndex: 2,
-    level: 1,
-  },
-  {
-    question: "What is the name of the Kannada film industry popularly called?",
-    options: ["Bollywood", "Kollywood", "Sandalwood", "Mollywood"],
-    correctIndex: 2,
-    level: 1,
-  },
-  {
-    question: "Who is the 'Power Star' of Kannada cinema?",
-    options: ["Puneeth Rajkumar", "Darshan", "Yash", "Sudeep"],
+    question: "ರಾಬರ್ಟ್ ಚಿತ್ರದಲ್ಲಿ ನಾಯಕ ಯಾರು?",
+    options: ["ದರ್ಶನ್", "ಯಶ್", "ಸುಧೀಪ್", "ರಕ್ಷಿತ್ ಶೆಟ್ಟಿ"],
     correctIndex: 0,
     level: 1,
   },
   {
-    question:
-      "Which Kannada movie featuring a dog became a massive family hit?",
-    options: [
-      "Godhi Banna Sadharana Mykattu",
-      "777 Charlie",
-      "Ayogya",
-      "Mufasa",
-    ],
-    correctIndex: 1,
-    level: 1,
-  },
-  {
-    question: "Who directed 'Vikrant Rona'?",
-    options: ["Anup Bhandari", "Suri", "Tarun Sudhir", "Chethan Kumar"],
+    question: "ಕೆಜಿಎಫ್ ಕಥೆಯ ಹಿನ್ನೆಲೆ ಯಾವುದು?",
+    options: ["ಚಿನ್ನದ ಗಣಿ", "ಕಾಲೇಜು", "ಕ್ರಿಕೆಟ್", "ರಾಜಕೀಯ"],
     correctIndex: 0,
     level: 1,
   },
   {
-    question:
-      "Which Kannada actor also appeared in the Hindi movie 'Dabangg 3'?",
-    options: ["Yash", "Darshan", "Sudeep", "Chiranjeevi Sarja"],
-    correctIndex: 2,
+    question: "777 ಚಾರ್ಲಿ ಬಿಡುಗಡೆಯಾದ ವರ್ಷ ಯಾವುದು?",
+    options: ["2022", "2021", "2020", "2019"],
+    correctIndex: 0,
     level: 1,
   },
   {
-    question: "What genre is the movie 'Ugramm'?",
-    options: ["Romantic", "Action", "Horror", "Comedy"],
-    correctIndex: 1,
+    question: "ಕಾಂತಾರ ಚಿತ್ರದ ನಾಯಕಿ ಯಾರು?",
+    options: ["ಸಪ್ತಮಿ ಗೌಡ", "ರಶ್ಮಿಕಾ", "ಮಿಲನಾ", "ಆಶಿಕಾ"],
+    correctIndex: 0,
     level: 1,
   },
   {
-    question:
-      "Which Kannada film won the National Award for Best Film in 2022?",
-    options: ["KGF Chapter 2", "Kantara", "777 Charlie", "Vikrant Rona"],
-    correctIndex: 1,
+    question: "ಕೆಜಿಎಫ್ ಅಧ್ಯಾಯ 1 ಬಿಡುಗಡೆಯಾದ ವರ್ಷ?",
+    options: ["2018", "2019", "2020", "2022"],
+    correctIndex: 0,
     level: 1,
   },
   {
-    question: "Who composed music for 'Mungaru Male'?",
-    options: ["Ravi Basrur", "V Harikrishna", "Manomurthy", "Rajesh Krishnan"],
-    correctIndex: 1,
+    question: "ವಿಕ್ರಾಂತ್ ರೋಣ ಬಿಡುಗಡೆಯಾದ ವರ್ಷ?",
+    options: ["2022", "2021", "2020", "2019"],
+    correctIndex: 0,
     level: 1,
   },
   {
-    question: "Which Kannada movie is based on gold mining in Kolar?",
-    options: ["Raajakumara", "KGF", "Tagaru", "Pailwaan"],
-    correctIndex: 1,
-    level: 1,
-  },
-  {
-    question: "What does 'KGF' stand for?",
-    options: [
-      "Kolar Gold Farm",
-      "Kolar Gold Fields",
-      "King Gold Fort",
-      "Karnataka Gold Falls",
-    ],
-    correctIndex: 1,
-    level: 1,
-  },
-  {
-    question: "Who plays the main antagonist 'Adheera' in KGF Chapter 2?",
-    options: ["Prakash Raj", "Sanjay Dutt", "Raveena Tandon", "Achyuth Kumar"],
-    correctIndex: 1,
+    question: "ಜೇಮ್ಸ್ ಚಿತ್ರ ಯಾವ ವರ್ಷದಲ್ಲಿ ಬಿಡುಗಡೆಯಾಯಿತು?",
+    options: ["2022", "2021", "2020", "2019"],
+    correctIndex: 0,
     level: 1,
   },
 
-  // Level 2 – Actors
+  // ಹಂತ 2 – ನಟರು
   {
-    question: "Which Kannada actor is known as 'Challenging Star'?",
-    options: ["Yash", "Darshan", "Sudeep", "Puneeth"],
-    correctIndex: 1,
-    level: 2,
-  },
-  {
-    question:
-      "Which actor starred in both Kannada and Telugu blockbusters as a pan-India star?",
-    options: ["Sudeep", "Yash", "Darshan", "Shiva Rajkumar"],
-    correctIndex: 1,
-    level: 2,
-  },
-  {
-    question: "Who is the son of legendary Kannada actor Dr. Rajkumar?",
-    options: ["Ramesh Aravind", "Puneeth Rajkumar", "Sudeep", "Jaggesh"],
-    correctIndex: 1,
-    level: 2,
-  },
-  {
-    question:
-      "Which Kannada actress starred in 'Mungaru Male' opposite Ganesh?",
-    options: ["Ramya", "Pooja Gandhi", "Parvathy", "Rachita Ram"],
+    question: "ಸುಧೀಪ್ ಅವರ ಪ್ರಸಿದ್ಧ ಬಿರುದು ಯಾವುದು?",
+    options: ["ಕಿಚ್ಚ", "ರಾಕಿಂಗ್ ಸ್ಟಾರ್", "ಗೋಲ್ಡನ್ ಸ್ಟಾರ್", "ಪವರ್ ಸ್ಟಾರ್"],
     correctIndex: 0,
     level: 2,
   },
   {
-    question:
-      "Rishab Shetty is best known for directing and acting in which 2022 film?",
-    options: ["777 Charlie", "Vikrant Rona", "Kantara", "Avane Srimannarayana"],
-    correctIndex: 2,
+    question: "ಯಶ್ ಅವರಿಗೆ ಯಾವ ಬಿರುದು ಇದೆ?",
+    options: ["ರಾಕಿಂಗ್ ಸ್ಟಾರ್", "ಚಾಲೆಂಜಿಂಗ್ ಸ್ಟಾರ್", "ಪವರ್ ಸ್ಟಾರ್", "ಗೋಲ್ಡನ್ ಸ್ಟಾರ್"],
+    correctIndex: 0,
+    level: 2,
+  },
+  {
+    question: "ದರ್ಶನ್ ಅವರ ಮೊದಲ ಸಿನಿಮಾ ಯಾವುದು?",
+    options: ["ಮಾಜೆಸ್ಟಿಕ್", "ರಾಬರ್ಟ್", "ಗಜ", "ಸಾರಥಿ"],
+    correctIndex: 0,
+    level: 2,
+  },
+  {
+    question: "ರಿಷಬ್ ಶೆಟ್ಟಿ ಯಾವ ಚಿತ್ರದಲ್ಲಿ ನಟಿಸಿ ನಿರ್ದೇಶಿಸಿದರು?",
+    options: ["ಕಾಂತಾರ", "ಕೆಜಿಎಫ್", "ರಾಬರ್ಟ್", "ಜೇಮ್ಸ್"],
+    correctIndex: 0,
+    level: 2,
+  },
+  {
+    question: "ಪುನೀತ್ ರಾಜ್‌ಕುಮಾರ್ ಅವರ ತಂದೆ ಯಾರು?",
+    options: ["ಡಾ. ರಾಜ್‌ಕುಮಾರ್", "ವಿಷ್ಣುವರ್ಧನ್", "ಅಂಬರೀಶ್", "ಶಿವರಾಜ್‌ಕುಮಾರ್"],
+    correctIndex: 0,
     level: 2,
   },
 
-  // Level 3 – Directors
+  // ಹಂತ 3 – ನಿರ್ದೇಶಕರು
   {
-    question: "Who directed the iconic Kannada film 'Mungaru Male'?",
-    options: ["Yogaraj Bhat", "Upendra", "Pawan Kumar", "Guruprasad"],
+    question: "ಉಪೇಂದ್ರ ಯಾವ ಚಿತ್ರವನ್ನು ನಿರ್ದೇಶಿಸಿದರು?",
+    options: ["A", "ಕೆಜಿಎಫ್", "ಕಾಂತಾರ", "ರಾಬರ್ಟ್"],
     correctIndex: 0,
     level: 3,
   },
   {
-    question: "Which director is known for the quirky film 'Lucia' in Kannada?",
-    options: ["Rishab Shetty", "Pawan Kumar", "Suri", "Tarun Sudhir"],
-    correctIndex: 1,
-    level: 3,
-  },
-  {
-    question: "Prashanth Neel is known for directing which franchise?",
-    options: ["Tagaru", "KGF", "Kantara", "Ugramm"],
-    correctIndex: 1,
-    level: 3,
-  },
-  {
-    question: "Who directed the Kannada film 'Ulidavaru Kandanthe'?",
-    options: ["Rakshit Shetty", "Hemanth Rao", "Pawan Kumar", "Rishab Shetty"],
+    question: "ಜೋಗಿ ಚಿತ್ರವನ್ನು ನಿರ್ದೇಶಿಸಿದವರು ಯಾರು?",
+    options: ["ಪ್ರೇಮ್", "ಪ್ರಶಾಂತ್ ನೀಲ್", "ರಿಷಬ್ ಶೆಟ್ಟಿ", "ಉಪೇಂದ್ರ"],
     correctIndex: 0,
     level: 3,
   },
   {
-    question:
-      "Which director is famous for films like 'OM' and 'Apthamitra' in Kannada?",
-    options: ["P. Vasu", "Upendra", "Guruprasad", "Suri"],
+    question: "ಉಲಿದವರು ಕಂಡಂತೆ ಚಿತ್ರ ನಿರ್ದೇಶಕ ಯಾರು?",
+    options: ["ರಕ್ಷಿತ್ ಶೆಟ್ಟಿ", "ರಿಷಬ್ ಶೆಟ್ಟಿ", "ಪ್ರೇಮ್", "ಉಪೇಂದ್ರ"],
+    correctIndex: 0,
+    level: 3,
+  },
+  {
+    question: "777 ಚಾರ್ಲಿ ನಿರ್ದೇಶಕ ಯಾರು?",
+    options: ["ಕಿರಣ್ ರಾಜ್", "ಪ್ರಶಾಂತ್ ನೀಲ್", "ಪ್ರೇಮ್", "ಉಪೇಂದ್ರ"],
+    correctIndex: 0,
+    level: 3,
+  },
+  {
+    question: "ರಾಬರ್ಟ್ ಚಿತ್ರ ನಿರ್ದೇಶಕ ಯಾರು?",
+    options: ["ತರುಣ್ ಸುಧೀರ್", "ಪ್ರೇಮ್", "ರಿಷಬ್ ಶೆಟ್ಟಿ", "ಉಪೇಂದ್ರ"],
     correctIndex: 0,
     level: 3,
   },
 
-  // Level 4 – Box Office
+  // ಹಂತ 4 – ಬಾಕ್ಸ್ ಆಫೀಸ್
   {
-    question:
-      "Which Kannada film crossed ₹1200 crore worldwide at the box office?",
-    options: ["Kantara", "KGF Chapter 2", "Vikrant Rona", "777 Charlie"],
-    correctIndex: 1,
+    question: "ಕೆಜಿಎಫ್ ಅಧ್ಯಾಯ 1 ಅಂದಾಜು ಎಷ್ಟು ಸಂಗ್ರಹಿಸಿತು?",
+    options: ["₹250 ಕೋಟಿ+", "₹100 ಕೋಟಿ", "₹50 ಕೋಟಿ", "₹500 ಕೋಟಿ"],
+    correctIndex: 0,
     level: 4,
   },
   {
-    question: "Approximately how much did 'Kantara' earn worldwide?",
-    options: ["₹100 crore", "₹300 crore", "₹400 crore", "₹600 crore"],
-    correctIndex: 3,
+    question: "ಜೇಮ್ಸ್ ಚಿತ್ರ ಅಂದಾಜು ಎಷ್ಟು ಸಂಗ್ರಹಿಸಿತು?",
+    options: ["₹150 ಕೋಟಿ+", "₹50 ಕೋಟಿ", "₹30 ಕೋಟಿ", "₹500 ಕೋಟಿ"],
+    correctIndex: 0,
     level: 4,
   },
   {
-    question:
-      "Which was the first Kannada film to cross ₹100 crore in box office collections?",
-    options: ["Raajakumara", "Pailwaan", "KGF Chapter 1", "Tagaru"],
-    correctIndex: 2,
+    question: "ಲವ್ ಮಾಕ್‌ಟೇಲ್ ಕಡಿಮೆ ಬಜೆಟ್‌ನಲ್ಲೂ ಯಶಸ್ವಿಯಾದ್ದೇ?",
+    options: ["ಹೌದು", "ಇಲ್ಲ", "ಮಧ್ಯಮ ಯಶಸ್ಸು", "ನಷ್ಟವಾಯಿತು"],
+    correctIndex: 0,
     level: 4,
   },
   {
-    question:
-      "KGF Chapter 2 earned record opening day collections – approximately how much?",
-    options: ["₹50 crore", "₹100 crore", "₹150 crore", "₹200 crore"],
-    correctIndex: 2,
+    question: "ಸ್ಯಾಂಡಲ್‌ವುಡ್ ಎಂದರೆ ಯಾವ ಚಿತ್ರರಂಗ?",
+    options: ["ಕನ್ನಡ", "ಹಿಂದಿ", "ತೆಲುಗು", "ತಮಿಳು"],
+    correctIndex: 0,
     level: 4,
   },
   {
-    question:
-      "Which Kannada film had the highest-ever opening week in Karnataka?",
-    options: ["Kantara", "777 Charlie", "KGF Chapter 2", "Vikrant Rona"],
-    correctIndex: 2,
+    question: "ಕಾಂತಾರ ಯಾವ ಮಟ್ಟದಲ್ಲಿ ಯಶಸ್ವಿಯಾಯಿತು?",
+    options: ["ಪ್ಯಾನ್ ಇಂಡಿಯಾ", "ಮಾತ್ರ ಕರ್ನಾಟಕ", "ವಿಫಲ", "OTT ಮಾತ್ರ"],
+    correctIndex: 0,
     level: 4,
   },
 ];
@@ -574,6 +508,8 @@ function HowToPlayModal({
           style={{
             color: "oklch(0.78 0.01 95)",
             fontFamily: '"Noto Sans Kannada", "Sora", sans-serif',
+            lineHeight: 1.7,
+            letterSpacing: "0.02em",
           }}
         >
           <li className="flex gap-2">
@@ -676,12 +612,14 @@ function HomeScreen({
         style={{ position: "relative", zIndex: 1 }}
       >
         <div
-          className="font-black leading-none tracking-tight"
+          className="font-black leading-none"
           style={{
             fontSize: "clamp(2.8rem, 10vw, 3.6rem)",
             color: "oklch(0.86 0.18 88)",
             fontFamily: '"Noto Sans Kannada", sans-serif',
             fontWeight: 900,
+            letterSpacing: "0.02em",
+            overflow: "visible",
           }}
         >
           ಸಿನಿಮಾ
@@ -754,7 +692,7 @@ function HomeScreen({
 
       {/* Buttons */}
       <div
-        className="w-full max-w-xs space-y-3"
+        className="w-full max-w-xs space-y-4 mt-2"
         style={{ position: "relative", zIndex: 1 }}
       >
         <button
@@ -971,7 +909,10 @@ function QuizScreen({
     name: "click" | "correct" | "wrong" | "levelComplete" | "gameOver",
   ) => void;
 }) {
-  const levelQuestions = QUESTIONS.filter((q) => q.level === level);
+  const levelQuestions = useMemo(
+    () => QUESTIONS.filter((q) => q.level === level),
+    [level],
+  );
   const [state, setState] = useState<QuizState>(() => ({
     questions: shuffle(levelQuestions),
     currentIndex: 0,
@@ -1185,10 +1126,13 @@ function QuizScreen({
           style={{ borderColor: "oklch(0.28 0.01 85)" }}
         >
           <p
-            className="title-font font-semibold text-center leading-snug"
+            className="title-font font-semibold text-center"
             style={{
               fontSize: "clamp(1rem, 4vw, 1.2rem)",
               color: "oklch(0.92 0.01 95)",
+              lineHeight: 1.65,
+              letterSpacing: "0.02em",
+              overflow: "visible",
             }}
           >
             {currentQ.question}
@@ -1438,7 +1382,7 @@ function LevelCompleteScreen({
         </div>
       )}
 
-      <div className="w-full max-w-xs space-y-3">
+      <div className="w-full max-w-xs space-y-4">
         <button
           type="button"
           className="gold-btn w-full py-4 text-base"
@@ -1455,8 +1399,37 @@ function LevelCompleteScreen({
           style={{
             background: "oklch(0.16 0.01 85)",
             color: "oklch(0.75 0.01 95)",
-            border: "1.5px solid oklch(0.28 0.01 85)",
+            border: "1.5px solid oklch(0.82 0.16 85 / 0.3)",
             fontFamily: '"Noto Sans Kannada", sans-serif',
+            cursor: "pointer",
+            touchAction: "manipulation",
+            transition: "opacity 0.15s ease",
+          }}
+          onClick={() => {
+            play("click");
+            const text = `🔥 ನಾನು Cinema Huduga ನಲ್ಲಿ ${score} ಅಂಕ ಗಳಿಸಿದ್ದೇನೆ! ನೀನು ಗೆಲ್ಲಬಲ್ಲೆಯಾ?`;
+            if (navigator.share) {
+              navigator.share({ text }).catch(() => {});
+            } else {
+              navigator.clipboard
+                .writeText(text)
+                .then(() => alert("ಅಂಕ ಕಾಪಿ ಆಗಿದೆ!"))
+                .catch(() => {});
+            }
+          }}
+        >
+          📤 ಅಂಕ ಹಂಚಿಕೊಳ್ಳಿ
+        </button>
+        <button
+          type="button"
+          className="w-full py-3 text-sm font-medium rounded-xl"
+          style={{
+            background: "oklch(0.13 0.005 85)",
+            color: "oklch(0.55 0.01 85)",
+            border: "1.5px solid oklch(0.22 0.01 85)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+            cursor: "pointer",
+            touchAction: "manipulation",
           }}
           onClick={() => {
             play("click");
@@ -1490,15 +1463,20 @@ interface ConfettiPiece {
 }
 
 function ConfettiRain() {
-  const pieces: ConfettiPiece[] = Array.from({ length: 30 }, (_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 1.5}s`,
-    duration: `${2 + Math.random() * 2}s`,
-    color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-    size: `${6 + Math.random() * 6}px`,
-    rotate: `${Math.random() * 360}deg`,
-  }));
+  const pieces = useMemo<ConfettiPiece[]>(
+    () =>
+      Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        left: `${Math.random() * 100}%`,
+        delay: `${Math.random() * 1.5}s`,
+        duration: `${2 + Math.random() * 2}s`,
+        color:
+          CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        size: `${6 + Math.random() * 6}px`,
+        rotate: `${Math.random() * 360}deg`,
+      })),
+    [],
+  );
 
   return (
     <>
@@ -1555,7 +1533,7 @@ function GameOverScreen({
   const showConfetti = totalAsked > 0 && correctCount / totalAsked >= 0.7;
 
   const handleShare = () => {
-    const text = `ಸಿನಿಮಾ ಹುಡುಗ ಆಟದಲ್ಲಿ ನಾನು ${score} ಅಂಕ ಗಳಿಸಿದೆ! 🎬🏆 ನೀವೂ ಆಡಿ: ${window.location.href}`;
+    const text = `🔥 ನಾನು Cinema Huduga ನಲ್ಲಿ ${score} ಅಂಕ ಗಳಿಸಿದ್ದೇನೆ! ನೀನು ಗೆಲ್ಲಬಲ್ಲೆಯಾ?`;
     if (navigator.share) {
       navigator.share({ text }).catch(() => {});
     } else {
@@ -1589,7 +1567,9 @@ function GameOverScreen({
           fontWeight: 900,
           color: "oklch(0.7 0.2 30)",
           fontFamily: '"Noto Sans Kannada", sans-serif',
-          letterSpacing: "0.02em",
+          letterSpacing: "0.04em",
+          lineHeight: 1.5,
+          overflow: "visible",
           textShadow: "0 0 24px oklch(0.7 0.2 30 / 0.5)",
         }}
       >
@@ -1609,9 +1589,11 @@ function GameOverScreen({
           style={{
             color: "oklch(0.55 0.01 85)",
             fontSize: "0.8rem",
-            letterSpacing: "0.12em",
+            letterSpacing: "0.08em",
+            lineHeight: 1.7,
             textTransform: "uppercase",
             fontFamily: '"Noto Sans Kannada", sans-serif',
+            overflow: "visible",
           }}
         >
           ನಿಮ್ಮ ಅಂಕ
@@ -1653,7 +1635,7 @@ function GameOverScreen({
       </div>
 
       {/* Buttons */}
-      <div className="w-full max-w-xs space-y-3 mt-2">
+      <div className="w-full max-w-xs space-y-4 mt-2">
         <button
           type="button"
           className="gold-btn gameover-play-btn w-full py-5 text-xl"
@@ -1702,6 +1684,21 @@ function GameOverScreen({
   );
 }
 
+// ── Screen Transition Wrapper ─────────────────────────────────────────────
+function ScreenTransition({
+  screenKey,
+  children,
+}: {
+  screenKey: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div key={screenKey} className="screen-enter w-full flex justify-center">
+      {children}
+    </div>
+  );
+}
+
 // ── Main App ───────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState<Screen>("splash");
@@ -1719,67 +1716,72 @@ export default function App() {
   const [bestScore, setBestScoreState] = useState(getBestScore);
   const [unlockedLevels, setUnlockedLevels] = useState(getUnlockedLevels);
   const [quizKey, setQuizKey] = useState(0);
+  // screenTransitionKey forces re-mount of ScreenTransition on every screen change,
+  // triggering the CSS entry animation without any JS delay.
+  const [screenTransitionKey, setScreenTransitionKey] = useState(0);
 
   const { soundOn, toggleSound, play } = useSoundEngine();
 
-  const refreshUnlocked = () => setUnlockedLevels(getUnlockedLevels());
+  const navigateTo = useCallback((next: Screen) => {
+    setScreen(next);
+    setScreenTransitionKey((k) => k + 1);
+  }, []);
 
   const handleSplashComplete = useCallback(() => {
     setShowSplash(false);
+    setScreenTransitionKey((k) => k + 1);
     setScreen("home");
     requestAnimationFrame(() => setContentVisible(true));
   }, []);
 
-  const handlePlay = () => setScreen("levelSelect");
+  const handlePlay = useCallback(() => navigateTo("levelSelect"), [navigateTo]);
 
-  const handleSelectLevel = (level: 1 | 2 | 3 | 4) => {
-    setSelectedLevel(level);
-    setQuizKey((k) => k + 1);
-    setScreen("quiz");
-  };
+  const handleSelectLevel = useCallback(
+    (level: 1 | 2 | 3 | 4) => {
+      setSelectedLevel(level);
+      setQuizKey((k) => k + 1);
+      navigateTo("quiz");
+    },
+    [navigateTo],
+  );
 
-  const handleLevelComplete = (
-    score: number,
-    correctCount: number,
-    totalCount: number,
-  ) => {
-    setQuizResult({ score, correctCount, totalCount });
-    setBestScore(score);
+  const handleLevelComplete = useCallback(
+    (score: number, correctCount: number, totalCount: number) => {
+      setQuizResult({ score, correctCount, totalCount });
+      setBestScore(score);
+      setBestScoreState(getBestScore());
+      setUnlockedLevels(getUnlockedLevels());
+      navigateTo("levelComplete");
+    },
+    [navigateTo],
+  );
+
+  const handleGameOver = useCallback(
+    (score: number, correctCount: number, totalAsked: number) => {
+      setFinalScore(score);
+      setFinalCorrectCount(correctCount);
+      setFinalTotalAsked(totalAsked);
+      setBestScore(score);
+      setBestScoreState(getBestScore());
+      navigateTo("gameOver");
+    },
+    [navigateTo],
+  );
+
+  const handlePlayAgain = useCallback(
+    () => navigateTo("levelSelect"),
+    [navigateTo],
+  );
+
+  const handleHome = useCallback(() => {
     setBestScoreState(getBestScore());
-    refreshUnlocked();
-    setScreen("levelComplete");
-  };
+    navigateTo("home");
+  }, [navigateTo]);
 
-  const handleGameOver = (
-    score: number,
-    correctCount: number,
-    totalAsked: number,
-  ) => {
-    setFinalScore(score);
-    setFinalCorrectCount(correctCount);
-    setFinalTotalAsked(totalAsked);
-    setBestScore(score);
-    setBestScoreState(getBestScore());
-    setScreen("gameOver");
-  };
-
-  const handlePlayAgain = () => setScreen("levelSelect");
-
-  const handleHome = () => {
-    setBestScoreState(getBestScore());
-    setScreen("home");
-  };
-
-  return (
-    <div className="game-container noise-bg">
-      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-
-      <div
-        className={`relative z-10 w-full flex justify-center ${
-          contentVisible ? "content-fade-in" : "content-hidden"
-        }`}
-      >
-        {screen === "home" && (
+  const renderScreen = () => {
+    switch (screen) {
+      case "home":
+        return (
           <HomeScreen
             onPlay={handlePlay}
             bestScore={bestScore}
@@ -1787,8 +1789,9 @@ export default function App() {
             onToggleSound={toggleSound}
             play={play}
           />
-        )}
-        {screen === "levelSelect" && (
+        );
+      case "levelSelect":
+        return (
           <LevelSelectScreen
             onSelectLevel={handleSelectLevel}
             onHome={handleHome}
@@ -1797,8 +1800,9 @@ export default function App() {
             onToggleSound={toggleSound}
             play={play}
           />
-        )}
-        {screen === "quiz" && (
+        );
+      case "quiz":
+        return (
           <QuizScreen
             key={quizKey}
             level={selectedLevel}
@@ -1808,8 +1812,9 @@ export default function App() {
             onToggleSound={toggleSound}
             play={play}
           />
-        )}
-        {screen === "levelComplete" && quizResult && (
+        );
+      case "levelComplete":
+        return quizResult ? (
           <LevelCompleteScreen
             level={selectedLevel}
             score={quizResult.score}
@@ -1821,8 +1826,9 @@ export default function App() {
             onToggleSound={toggleSound}
             play={play}
           />
-        )}
-        {screen === "gameOver" && (
+        ) : null;
+      case "gameOver":
+        return (
           <GameOverScreen
             score={finalScore}
             correctCount={finalCorrectCount}
@@ -1833,7 +1839,24 @@ export default function App() {
             onToggleSound={toggleSound}
             play={play}
           />
-        )}
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="game-container noise-bg">
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+
+      <div
+        className={`relative z-10 w-full ${
+          contentVisible ? "content-fade-in" : "content-hidden"
+        }`}
+      >
+        <ScreenTransition screenKey={`${screen}-${screenTransitionKey}`}>
+          {renderScreen()}
+        </ScreenTransition>
       </div>
     </div>
   );

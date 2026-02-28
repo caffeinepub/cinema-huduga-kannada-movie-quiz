@@ -1,8 +1,30 @@
 <html lang="kn">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ಸಿನಿಮಾ ಹುಡುಗ – ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Theme & Status Bar -->
+    <meta name="theme-color" content="#D4AF37" />
+    <meta name="msapplication-TileColor" content="#000000" />
+
+    <!-- Apple PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Cinema Huduga" />
+    <link rel="apple-touch-icon" href="/assets/generated/icon-512x512-transparent.dim_512x512.png" />
+
+    <!-- SEO / Open Graph -->
+    <meta name="description" content="ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ ಆಟ – Test your Kannada cinema knowledge!" />
+    <meta property="og:title" content="ಸಿನಿಮಾ ಹುಡುಗ" />
+    <meta property="og:description" content="ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ ಆಟ" />
+    <meta property="og:image" content="/assets/generated/icon-512x512-transparent.dim_512x512.png" />
+    <meta property="og:type" content="website" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -10,5 +32,16 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((reg) => console.log('SW registered:', reg.scope))
+            .catch((err) => console.log('SW registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>

@@ -82,7 +82,16 @@
     @apply bg-background text-foreground;
     font-family: "Sora", "Noto Sans Kannada", sans-serif;
     -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+  }
+
+  /* Kannada text rendering */
+  :lang(kn), [lang="kn"], .kannada-font {
+    font-family: "Noto Sans Kannada", sans-serif;
+    letter-spacing: 0.03em;
+    line-height: 1.7;
   }
 }
 
@@ -102,10 +111,13 @@
     color: oklch(0.08 0 0);
     font-family: "Bricolage Grotesque", "Noto Sans Kannada", sans-serif;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+    overflow: visible;
     border: none;
     border-radius: 0.75rem;
     cursor: pointer;
+    touch-action: manipulation;
     transition: transform 0.1s ease, box-shadow 0.1s ease;
     box-shadow: 0 4px 20px oklch(0.82 0.16 85 / 0.35);
     animation: gold-glow 2.5s ease-in-out infinite;
@@ -123,6 +135,8 @@
   }
 
   .press-btn {
+    cursor: pointer;
+    touch-action: manipulation;
     transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease;
   }
 
@@ -131,14 +145,20 @@
   }
 
   .answer-btn {
-    @apply w-full text-left px-5 py-4 rounded-2xl font-medium transition-all duration-150;
+    @apply w-full text-left px-5 rounded-2xl font-medium transition-all duration-150;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    min-height: 56px;
     background: oklch(0.14 0.01 85);
     border: 1.5px solid oklch(0.25 0.01 85);
     color: oklch(0.9 0.01 95);
     font-family: "Sora", "Noto Sans Kannada", sans-serif;
     font-size: 0.95rem;
-    line-height: 1.4;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+    overflow: visible;
     cursor: pointer;
+    touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -181,11 +201,30 @@
 
   .kannada-font {
     font-family: "Noto Sans Kannada", sans-serif;
+    letter-spacing: 0.03em;
+    line-height: 1.7;
+    overflow: visible;
   }
 }
 
 /* ── Question entry animation ─────────────────────────── */
 @keyframes question-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+.question-enter {
+  animation: question-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Screen transitions ───────────────────────────────── */
+@keyframes screen-enter {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -196,8 +235,23 @@
   }
 }
 
-.question-enter {
-  animation: question-enter 0.3s ease forwards;
+@keyframes screen-exit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.screen-enter {
+  animation: screen-enter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.screen-exit {
+  animation: screen-exit 0.18s ease forwards;
 }
 
 /* ── Circular timer warning glow ──────────────────────── */
@@ -268,6 +322,7 @@
   );
   background-size: 300% 300%;
   animation: bg-shift 12s ease-in-out infinite;
+  will-change: background-position;
   z-index: 0;
   pointer-events: none;
 }
@@ -441,6 +496,8 @@
   pointer-events: none;
   z-index: 200;
   animation: confetti-fall linear forwards;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* ── Gameover play btn enhanced glow ─────────────────── */

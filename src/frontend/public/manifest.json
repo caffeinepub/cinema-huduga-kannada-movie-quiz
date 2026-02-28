@@ -1,0 +1,37 @@
+{
+  "name": "ಸಿನಿಮಾ ಹುಡುಗ – ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ",
+  "short_name": "Cinema Huduga",
+  "description": "ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ ಆಟ – Test your Kannada cinema knowledge!",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#D4AF37",
+  "lang": "kn",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "/assets/generated/icon-512x512-transparent.dim_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/generated/icon-512x512-transparent.dim_512x512.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/generated/icon-512x512-transparent.dim_512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "ಸಿನಿಮಾ ಹುಡುಗ ಹೋಮ್ ಸ್ಕ್ರೀನ್"
+    }
+  ],
+  "prefer_related_applications": false
+}
