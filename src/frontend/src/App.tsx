@@ -16,7 +16,9 @@ type Screen =
   | "levelSelect"
   | "quiz"
   | "levelComplete"
-  | "gameOver";
+  | "gameOver"
+  | "dailyChallenge"
+  | "shop";
 
 // ── Sound Toggle Button ────────────────────────────────────────────────────
 function SoundToggle({
@@ -56,6 +58,65 @@ function SoundToggle({
   );
 }
 
+// ── Coin Display ───────────────────────────────────────────────────────────
+function CoinDisplay({ coins }: { coins: number }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "1.25rem",
+        right: "4.25rem",
+        background: "oklch(0.16 0.04 85)",
+        border: "1.5px solid oklch(0.82 0.16 85 / 0.5)",
+        borderRadius: "2rem",
+        padding: "0.28rem 0.75rem",
+        display: "flex",
+        alignItems: "center",
+        gap: "0.3rem",
+        zIndex: 2,
+        fontSize: "0.85rem",
+        fontWeight: 800,
+        color: "oklch(0.86 0.18 88)",
+        fontFamily: '"Bricolage Grotesque", "Noto Sans Kannada", sans-serif',
+        letterSpacing: "0.03em",
+        boxShadow: "0 2px 10px oklch(0.82 0.16 85 / 0.15)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      🪙 {coins}
+    </div>
+  );
+}
+
+// ── Streak Banner ──────────────────────────────────────────────────────────
+function StreakBanner({ message }: { message: string }) {
+  return (
+    <div className="streak-banner" aria-live="polite">
+      {message}
+    </div>
+  );
+}
+
+// ── Floating Coin Toast ────────────────────────────────────────────────────
+interface CoinToast {
+  id: number;
+  amount: number;
+  x: number;
+  y: number;
+}
+
+function FloatingCoinToast({ toast }: { toast: CoinToast }) {
+  return (
+    <div
+      className="coin-toast"
+      style={{ left: toast.x, top: toast.y }}
+      aria-hidden="true"
+    >
+      +{toast.amount} 🪙
+    </div>
+  );
+}
+
 // ── Splash Screen ──────────────────────────────────────────────────────────
 function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState<"entering" | "exiting">("entering");
@@ -75,11 +136,15 @@ function SplashScreen({ onComplete }: { onComplete: () => void }) {
       <div className="splash-spotlight" />
       <div className="splash-logo">
         <img
-          src="/assets/generated/cinema-huduga-logo-transparent.dim_200x200.png"
+          src="/assets/uploads/ChatGPT-Image-Mar-1-2026-02_58_16-AM-1.png"
           alt="Cinema Huduga"
           width={120}
           height={120}
-          style={{ display: "block", objectFit: "contain" }}
+          style={{
+            display: "block",
+            objectFit: "contain",
+            borderRadius: "22%",
+          }}
         />
       </div>
       <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
@@ -359,6 +424,31 @@ function unlockLevel(level: number): void {
   }
 }
 
+// ── Coin helpers ───────────────────────────────────────────────────────────
+function getCoins(): number {
+  const val = Number.parseInt(localStorage.getItem("coins") ?? "100", 10);
+  return Number.isNaN(val) ? 100 : val;
+}
+
+function saveCoins(c: number): void {
+  localStorage.setItem("coins", String(Math.max(0, c)));
+}
+
+// ── Daily Challenge helpers ────────────────────────────────────────────────
+function getDailyChallengeDate(): string {
+  return localStorage.getItem("dailyChallengeDate") ?? "";
+}
+
+function setDailyChallengeDate(): void {
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem("dailyChallengeDate", today);
+}
+
+function isDailyChallengeAvailable(): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  return getDailyChallengeDate() !== today;
+}
+
 const TIMER_DURATION = 15;
 
 // ── Circular Timer ─────────────────────────────────────────────────────────
@@ -556,6 +646,14 @@ function HowToPlayModal({
               ಉತ್ತರ ನೀಡಿ ಮುಂದಿನ ಹಂತ ತೆರೆಯಿರಿ.
             </span>
           </li>
+          <li className="flex gap-2">
+            <span className="text-base">🪙</span>
+            <span>
+              ಸರಿ ಉತ್ತರಕ್ಕೆ{" "}
+              <strong style={{ color: "oklch(0.82 0.16 85)" }}>+10 ನಾಣ್ಯ</strong>
+              , ಸ್ಟ್ರೀಕ್‌ಗೆ ಬೋನಸ್.
+            </span>
+          </li>
         </ul>
         <button
           type="button"
@@ -580,12 +678,18 @@ function HomeScreen({
   soundOn,
   onToggleSound,
   play,
+  coins,
+  onDailyChallenge,
+  onShop,
 }: {
   onPlay: () => void;
   bestScore: number;
   soundOn: boolean;
   onToggleSound: () => void;
   play: (name: "click") => void;
+  coins: number;
+  onDailyChallenge: () => void;
+  onShop: () => void;
 }) {
   const [showHowTo, setShowHowTo] = useState(false);
 
@@ -605,6 +709,9 @@ function HomeScreen({
           onToggleSound();
         }}
       />
+
+      {/* Coin display */}
+      <CoinDisplay coins={coins} />
 
       {/* Title block */}
       <div
@@ -709,6 +816,46 @@ function HomeScreen({
           type="button"
           className="press-btn w-full py-3 text-sm font-medium rounded-xl"
           style={{
+            background: "oklch(0.18 0.04 85)",
+            color: "oklch(0.86 0.18 88)",
+            border: "1.5px solid oklch(0.82 0.16 85 / 0.4)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+            transition:
+              "transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease",
+            cursor: "pointer",
+            touchAction: "manipulation",
+          }}
+          onClick={() => {
+            play("click");
+            onDailyChallenge();
+          }}
+        >
+          <span style={{ marginRight: "0.5rem" }}>🏅</span>ದೈನಂದಿನ ಸವಾಲು
+        </button>
+        <button
+          type="button"
+          className="press-btn w-full py-3 text-sm font-medium rounded-xl"
+          style={{
+            background: "oklch(0.16 0.01 85)",
+            color: "oklch(0.75 0.01 95)",
+            border: "1.5px solid oklch(0.28 0.01 85)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+            transition:
+              "transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s ease",
+            cursor: "pointer",
+            touchAction: "manipulation",
+          }}
+          onClick={() => {
+            play("click");
+            onShop();
+          }}
+        >
+          <span style={{ marginRight: "0.5rem" }}>🛒</span>ಅಂಗಡಿ
+        </button>
+        <button
+          type="button"
+          className="press-btn w-full py-3 text-sm font-medium rounded-xl"
+          style={{
             background: "oklch(0.16 0.01 85)",
             color: "oklch(0.75 0.01 95)",
             border: "1.5px solid oklch(0.28 0.01 85)",
@@ -761,6 +908,7 @@ function LevelSelectScreen({
   soundOn,
   onToggleSound,
   play,
+  coins,
 }: {
   onSelectLevel: (level: 1 | 2 | 3 | 4) => void;
   onHome: () => void;
@@ -768,6 +916,7 @@ function LevelSelectScreen({
   soundOn: boolean;
   onToggleSound: () => void;
   play: (name: "click") => void;
+  coins: number;
 }) {
   const levels = [1, 2, 3, 4] as const;
 
@@ -781,6 +930,9 @@ function LevelSelectScreen({
           onToggleSound();
         }}
       />
+
+      {/* Coin display */}
+      <CoinDisplay coins={coins} />
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
@@ -890,6 +1042,7 @@ interface QuizState {
   correctCount: number;
   selectedIndex: number | null;
   answerState: "idle" | "correct" | "wrong" | "timeout";
+  streak: number;
 }
 
 function QuizScreen({
@@ -899,20 +1052,42 @@ function QuizScreen({
   soundOn,
   onToggleSound,
   play,
+  coins,
+  awardCoins,
+  spendCoins,
+  isDailyChallenge,
 }: {
   level: 1 | 2 | 3 | 4;
-  onComplete: (score: number, correctCount: number, totalCount: number) => void;
-  onGameOver: (score: number, correctCount: number, totalAsked: number) => void;
+  onComplete: (
+    score: number,
+    correctCount: number,
+    totalCount: number,
+    sessionCoins: number,
+  ) => void;
+  onGameOver: (
+    score: number,
+    correctCount: number,
+    totalAsked: number,
+    sessionCoins: number,
+  ) => void;
   soundOn: boolean;
   onToggleSound: () => void;
   play: (
     name: "click" | "correct" | "wrong" | "levelComplete" | "gameOver",
   ) => void;
+  coins: number;
+  awardCoins: (amount: number, x?: number, y?: number) => void;
+  spendCoins: (amount: number) => boolean;
+  isDailyChallenge?: boolean;
 }) {
   const levelQuestions = useMemo(
-    () => QUESTIONS.filter((q) => q.level === level),
-    [level],
+    () =>
+      isDailyChallenge
+        ? shuffle(QUESTIONS).slice(0, 10)
+        : QUESTIONS.filter((q) => q.level === level),
+    [level, isDailyChallenge],
   );
+
   const [state, setState] = useState<QuizState>(() => ({
     questions: shuffle(levelQuestions),
     currentIndex: 0,
@@ -921,15 +1096,73 @@ function QuizScreen({
     correctCount: 0,
     selectedIndex: null,
     answerState: "idle",
+    streak: 0,
   }));
 
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const answerRef = useRef<QuizState["answerState"]>("idle");
   const timeLeftRef = useRef(TIMER_DURATION);
+  const sessionCoinsRef = useRef(0);
+
+  // Power-up state
+  const [fiftyFiftyUsed, setFiftyFiftyUsed] = useState(false);
+  const [hiddenOptions, setHiddenOptions] = useState<number[]>([]);
+
+  // Streak banner
+  const [streakBanner, setStreakBanner] = useState<string | null>(null);
+  const streakBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  // Coin toasts
+  const [coinToasts, setCoinToasts] = useState<CoinToast[]>([]);
+  const toastIdRef = useRef(0);
 
   const currentQ = state.questions[state.currentIndex];
   const isAnswered = state.answerState !== "idle";
+
+  const showCoinToast = useCallback((amount: number) => {
+    const id = ++toastIdRef.current;
+    const x = 50 + Math.random() * 80;
+    const y = 180 + Math.random() * 60;
+    setCoinToasts((prev) => [...prev, { id, amount, x, y }]);
+    setTimeout(() => {
+      setCoinToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 1300);
+  }, []);
+
+  const triggerStreak = useCallback(
+    (streak: number) => {
+      if (streakBannerTimerRef.current)
+        clearTimeout(streakBannerTimerRef.current);
+
+      if (streak === 3) {
+        awardCoins(20);
+        sessionCoinsRef.current += 20;
+        showCoinToast(20);
+        setStreakBanner("🔥 Streak x3! +20 🪙");
+      } else if (streak === 5) {
+        awardCoins(50);
+        sessionCoinsRef.current += 50;
+        showCoinToast(50);
+        setStreakBanner("🔥🔥 Super Streak! +50 🪙");
+      } else if (streak > 5 && streak % 3 === 0) {
+        awardCoins(20);
+        sessionCoinsRef.current += 20;
+        showCoinToast(20);
+        setStreakBanner(`🔥 Streak x${streak}! +20 🪙`);
+      } else {
+        setStreakBanner(null);
+        return;
+      }
+
+      streakBannerTimerRef.current = setTimeout(() => {
+        setStreakBanner(null);
+      }, 1500);
+    },
+    [awardCoins, showCoinToast],
+  );
 
   const advanceQuestion = useCallback(
     (newState: QuizState) => {
@@ -939,6 +1172,7 @@ function QuizScreen({
           newState.score,
           newState.correctCount,
           newState.questions.length,
+          sessionCoinsRef.current,
         );
         return;
       }
@@ -947,6 +1181,7 @@ function QuizScreen({
           newState.score,
           newState.correctCount,
           newState.currentIndex + 1,
+          sessionCoinsRef.current,
         );
         return;
       }
@@ -970,6 +1205,7 @@ function QuizScreen({
       const isCorrect = index === currentQ.correctIndex;
       const elapsed = TIMER_DURATION - timeLeftRef.current;
       const speedBonus = isCorrect && elapsed < 5 ? 5 : 0;
+      const coinsPerCorrect = isDailyChallenge ? 20 : 10;
       const pointsGained = isCorrect ? 10 + speedBonus : 0;
 
       const newAnswerState: QuizState["answerState"] = isCorrect
@@ -981,12 +1217,20 @@ function QuizScreen({
       play(isCorrect ? "correct" : "wrong");
       if (!isCorrect && navigator.vibrate) navigator.vibrate(200);
 
+      if (isCorrect) {
+        awardCoins(coinsPerCorrect);
+        sessionCoinsRef.current += coinsPerCorrect;
+        showCoinToast(coinsPerCorrect);
+      }
+
       setState((prev) => {
         const newScore = prev.score + pointsGained;
         const newLives = isCorrect ? prev.lives : prev.lives - 1;
         const newCorrectCount = isCorrect
           ? prev.correctCount + 1
           : prev.correctCount;
+        const newStreak = isCorrect ? prev.streak + 1 : 0;
+
         const next: QuizState = {
           ...prev,
           score: newScore,
@@ -994,7 +1238,12 @@ function QuizScreen({
           correctCount: newCorrectCount,
           selectedIndex: index,
           answerState: newAnswerState,
+          streak: newStreak,
         };
+
+        if (isCorrect) {
+          triggerStreak(newStreak);
+        }
 
         setTimeout(() => {
           answerRef.current = "idle";
@@ -1004,8 +1253,23 @@ function QuizScreen({
         return next;
       });
     },
-    [currentQ, advanceQuestion, play],
+    [
+      currentQ,
+      advanceQuestion,
+      play,
+      awardCoins,
+      showCoinToast,
+      triggerStreak,
+      isDailyChallenge,
+    ],
   );
+
+  // Reset power-ups on new question
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional - currentIndex triggers reset
+  useEffect(() => {
+    setFiftyFiftyUsed(false);
+    setHiddenOptions([]);
+  }, [state.currentIndex]);
 
   // Timer
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional - currentIndex triggers reset
@@ -1032,6 +1296,7 @@ function QuizScreen({
             lives: newLives,
             selectedIndex: null,
             answerState: "timeout",
+            streak: 0,
           };
           setTimeout(() => {
             answerRef.current = "idle";
@@ -1046,6 +1311,55 @@ function QuizScreen({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [state.currentIndex, advanceQuestion, play]);
+
+  // Power-up: 50/50
+  const handleFiftyFifty = useCallback(() => {
+    if (fiftyFiftyUsed || isAnswered) return;
+    if (coins < 30) {
+      alert("ಸಾಕಷ್ಟು ನಾಣ್ಯಗಳಿಲ್ಲ! (30 🪙 ಬೇಕು)");
+      return;
+    }
+    if (!spendCoins(30)) return;
+    sessionCoinsRef.current -= 30;
+    // Pick 2 wrong option indices
+    const wrongIndices = [0, 1, 2, 3].filter(
+      (i) => i !== currentQ.correctIndex,
+    );
+    const toHide = shuffle(wrongIndices).slice(0, 2);
+    setHiddenOptions(toHide);
+    setFiftyFiftyUsed(true);
+  }, [fiftyFiftyUsed, isAnswered, coins, currentQ, spendCoins]);
+
+  // Power-up: Extra Life
+  const handleExtraLife = useCallback(() => {
+    if (isAnswered) return;
+    if (state.lives >= 3) return;
+    if (coins < 50) {
+      alert("ಸಾಕಷ್ಟು ನಾಣ್ಯಗಳಿಲ್ಲ! (50 🪙 ಬೇಕು)");
+      return;
+    }
+    if (!spendCoins(50)) return;
+    sessionCoinsRef.current -= 50;
+    setState((prev) => ({ ...prev, lives: Math.min(3, prev.lives + 1) }));
+  }, [isAnswered, state.lives, coins, spendCoins]);
+
+  // Power-up: Skip
+  const handleSkip = useCallback(() => {
+    if (isAnswered) return;
+    if (coins < 40) {
+      alert("ಸಾಕಷ್ಟು ನಾಣ್ಯಗಳಿಲ್ಲ! (40 🪙 ಬೇಕು)");
+      return;
+    }
+    if (!spendCoins(40)) return;
+    sessionCoinsRef.current -= 40;
+    if (timerRef.current) clearInterval(timerRef.current);
+    answerRef.current = "idle";
+    setState((prev) => {
+      const next: QuizState = { ...prev };
+      advanceQuestion(next);
+      return next;
+    });
+  }, [isAnswered, coins, spendCoins, advanceQuestion]);
 
   const getButtonClass = (idx: number): string => {
     const base = "answer-btn";
@@ -1067,9 +1381,20 @@ function QuizScreen({
         }}
       />
 
+      {/* Coin display */}
+      <CoinDisplay coins={coins} />
+
+      {/* Streak banner */}
+      {streakBanner && <StreakBanner message={streakBanner} />}
+
+      {/* Floating coin toasts */}
+      {coinToasts.map((t) => (
+        <FloatingCoinToast key={t.id} toast={t} />
+      ))}
+
       {/* Top bar */}
       <div
-        className="flex items-center justify-between mb-3"
+        className="flex items-center justify-between mb-2"
         style={{ paddingRight: "3.5rem" }}
       >
         <div className="card-dark px-3 py-1.5">
@@ -1090,15 +1415,90 @@ function QuizScreen({
           </span>
         </div>
         <div
-          className="text-xs font-medium tracking-wider"
+          className="text-xs font-medium tracking-wider text-center"
           style={{
             color: "oklch(0.55 0.01 85)",
             fontFamily: '"Noto Sans Kannada", "Sora", sans-serif',
           }}
         >
-          {LEVEL_NAMES[level]}
+          {isDailyChallenge ? "ದೈನಂದಿನ ಸವಾಲು 🏅" : LEVEL_NAMES[level]}
         </div>
         <HeartIcons lives={state.lives} />
+      </div>
+
+      {/* Streak indicator */}
+      {state.streak >= 2 && (
+        <div
+          className="text-center text-xs mb-1"
+          style={{
+            color: "oklch(0.82 0.16 85)",
+            fontFamily: '"Bricolage Grotesque", sans-serif',
+            fontWeight: 700,
+            letterSpacing: "0.04em",
+          }}
+        >
+          🔥 {state.streak} streak
+        </div>
+      )}
+
+      {/* Power-ups row */}
+      <div
+        className="flex gap-2 justify-center mb-2"
+        style={{ paddingRight: "0" }}
+      >
+        {/* 50/50 */}
+        <button
+          type="button"
+          onClick={handleFiftyFifty}
+          disabled={fiftyFiftyUsed || isAnswered || coins < 30}
+          className="powerup-btn"
+          title="50/50 – 2 ತಪ್ಪು ಆಯ್ಕೆ ತೆಗೆಯಿರಿ"
+          style={{
+            opacity: fiftyFiftyUsed || coins < 30 ? 0.4 : 1,
+            cursor:
+              fiftyFiftyUsed || coins < 30 || isAnswered
+                ? "not-allowed"
+                : "pointer",
+          }}
+        >
+          <span className="powerup-icon">🎯</span>
+          <span className="powerup-cost">30🪙</span>
+        </button>
+
+        {/* Extra Life */}
+        <button
+          type="button"
+          onClick={handleExtraLife}
+          disabled={isAnswered || state.lives >= 3 || coins < 50}
+          className="powerup-btn"
+          title="Extra Life – 1 ಜೀವ ಮರಳಿ ಪಡೆಯಿರಿ"
+          style={{
+            opacity: state.lives >= 3 || coins < 50 ? 0.4 : 1,
+            cursor:
+              state.lives >= 3 || coins < 50 || isAnswered
+                ? "not-allowed"
+                : "pointer",
+          }}
+        >
+          <span className="powerup-icon">❤️</span>
+          <span className="powerup-cost">50🪙</span>
+        </button>
+
+        {/* Skip */}
+        <button
+          type="button"
+          onClick={handleSkip}
+          disabled={isAnswered || coins < 40}
+          className="powerup-btn"
+          title="Skip – ಈ ಪ್ರಶ್ನೆ ಬಿಡಿ"
+          style={{
+            opacity: coins < 40 ? 0.4 : 1,
+            cursor: coins < 40 || isAnswered ? "not-allowed" : "pointer",
+          }}
+        >
+          <span className="powerup-icon">⏭️</span>
+          <span className="powerup-cost">40🪙</span>
+        </button>
       </div>
 
       {/* Progress text */}
@@ -1170,6 +1570,9 @@ function QuizScreen({
               className={getButtonClass(idx)}
               disabled={isAnswered}
               onClick={() => handleAnswer(idx)}
+              style={{
+                visibility: hiddenOptions.includes(idx) ? "hidden" : "visible",
+              }}
             >
               <span
                 className="inline-block w-6 h-6 rounded-full text-center text-xs font-bold mr-2 leading-6 flex-shrink-0"
@@ -1227,21 +1630,25 @@ function LevelCompleteScreen({
   score,
   correctCount,
   totalCount,
+  coinsEarned,
   onPlayAgain,
   onHome,
   soundOn,
   onToggleSound,
   play,
+  coins,
 }: {
   level: 1 | 2 | 3 | 4;
   score: number;
   correctCount: number;
   totalCount: number;
+  coinsEarned: number;
   onPlayAgain: () => void;
   onHome: () => void;
   soundOn: boolean;
   onToggleSound: () => void;
   play: (name: "click" | "levelComplete") => void;
+  coins: number;
 }) {
   const percentage = Math.round((correctCount / totalCount) * 100);
   const passed = percentage >= 70;
@@ -1268,6 +1675,9 @@ function LevelCompleteScreen({
           onToggleSound();
         }}
       />
+
+      {/* Coin display */}
+      <CoinDisplay coins={coins} />
 
       <div
         className="text-5xl"
@@ -1353,6 +1763,24 @@ function LevelCompleteScreen({
             {percentage}%
           </span>
         </div>
+        {coinsEarned > 0 && (
+          <div className="flex justify-between">
+            <span
+              style={{
+                color: "oklch(0.55 0.01 85)",
+                fontFamily: '"Noto Sans Kannada", sans-serif',
+              }}
+            >
+              ಗಳಿಸಿದ ನಾಣ್ಯ
+            </span>
+            <span
+              className="title-font font-bold"
+              style={{ color: "oklch(0.86 0.18 88)" }}
+            >
+              +{coinsEarned} 🪙
+            </span>
+          </div>
+        )}
       </div>
 
       {passed && nextLevel && (
@@ -1504,20 +1932,24 @@ function GameOverScreen({
   score,
   correctCount,
   totalAsked,
+  coinsEarned,
   onPlayAgain,
   onHome,
   soundOn,
   onToggleSound,
   play,
+  coins,
 }: {
   score: number;
   correctCount: number;
   totalAsked: number;
+  coinsEarned: number;
   onPlayAgain: () => void;
   onHome: () => void;
   soundOn: boolean;
   onToggleSound: () => void;
   play: (name: "click" | "gameOver") => void;
+  coins: number;
 }) {
   const bestScore = getBestScore();
 
@@ -1559,6 +1991,9 @@ function GameOverScreen({
           onToggleSound();
         }}
       />
+
+      {/* Coin display */}
+      <CoinDisplay coins={coins} />
 
       {/* Title */}
       <div
@@ -1632,6 +2067,18 @@ function GameOverScreen({
         >
           ಅತ್ಯುತ್ತಮ ಅಂಕ: {Math.max(score, bestScore)}
         </div>
+        {coinsEarned > 0 && (
+          <div
+            style={{
+              color: "oklch(0.86 0.18 88)",
+              fontSize: "0.9rem",
+              fontWeight: 700,
+              fontFamily: '"Noto Sans Kannada", sans-serif',
+            }}
+          >
+            ಗಳಿಸಿದ ನಾಣ್ಯ: +{coinsEarned} 🪙
+          </div>
+        )}
       </div>
 
       {/* Buttons */}
@@ -1684,6 +2131,537 @@ function GameOverScreen({
   );
 }
 
+// ── Daily Challenge Screen ─────────────────────────────────────────────────
+function DailyChallengeScreen({
+  onHome,
+  soundOn,
+  onToggleSound,
+  play,
+  coins,
+  awardCoins,
+  spendCoins,
+  onGameOver,
+}: {
+  onHome: () => void;
+  soundOn: boolean;
+  onToggleSound: () => void;
+  play: (
+    name: "click" | "correct" | "wrong" | "levelComplete" | "gameOver",
+  ) => void;
+  coins: number;
+  awardCoins: (amount: number, x?: number, y?: number) => void;
+  spendCoins: (amount: number) => boolean;
+  onGameOver: (
+    score: number,
+    correctCount: number,
+    totalAsked: number,
+    sessionCoins: number,
+  ) => void;
+}) {
+  const available = isDailyChallengeAvailable();
+  const [started, setStarted] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [result, setResult] = useState<{
+    score: number;
+    correctCount: number;
+    total: number;
+  } | null>(null);
+  const [quizKey, setQuizKey] = useState(0);
+
+  const handleStart = useCallback(() => {
+    setDailyChallengeDate();
+    setStarted(true);
+    setQuizKey((k) => k + 1);
+  }, []);
+
+  const handleComplete = useCallback(
+    (
+      score: number,
+      correctCount: number,
+      totalCount: number,
+      sessionCoins: number,
+    ) => {
+      // Bonus +100 coins for completing daily challenge
+      awardCoins(100);
+      setResult({ score, correctCount, total: totalCount });
+      setCompleted(true);
+      play("levelComplete");
+      void sessionCoins;
+    },
+    [awardCoins, play],
+  );
+
+  const handleDailyGameOver = useCallback(
+    (
+      score: number,
+      correctCount: number,
+      totalAsked: number,
+      sessionCoins: number,
+    ) => {
+      onGameOver(score, correctCount, totalAsked, sessionCoins);
+    },
+    [onGameOver],
+  );
+
+  if (!available && !started) {
+    return (
+      <div
+        className="screen justify-center items-center text-center gap-6"
+        style={{ position: "relative" }}
+      >
+        <SoundToggle
+          soundOn={soundOn}
+          onToggle={() => {
+            play("click");
+            onToggleSound();
+          }}
+        />
+        <CoinDisplay coins={coins} />
+
+        <div
+          className="text-5xl"
+          style={{ filter: "drop-shadow(0 0 20px oklch(0.82 0.16 85 / 0.5))" }}
+        >
+          🏅
+        </div>
+        <h1
+          className="font-black text-2xl"
+          style={{
+            color: "oklch(0.86 0.18 88)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+            fontWeight: 900,
+          }}
+        >
+          ದೈನಂದಿನ ಸವಾಲು
+        </h1>
+        <div
+          className="card-dark w-full max-w-xs p-6 text-center"
+          style={{ borderColor: "oklch(0.82 0.16 85 / 0.3)" }}
+        >
+          <div className="text-4xl mb-3">⏳</div>
+          <p
+            className="text-base font-semibold"
+            style={{
+              color: "oklch(0.75 0.01 95)",
+              fontFamily: '"Noto Sans Kannada", sans-serif',
+              lineHeight: 1.7,
+            }}
+          >
+            ಇಂದಿನ ಸವಾಲು ಮುಗಿದಿದೆ!
+            <br />
+            ನಾಳೆ ಮತ್ತೆ ಬನ್ನಿ
+          </p>
+          <p
+            className="text-xs mt-2"
+            style={{
+              color: "oklch(0.45 0.01 85)",
+              fontFamily: '"Noto Sans Kannada", sans-serif',
+            }}
+          >
+            ಪ್ರತಿ ದಿನ ಹೊಸ 10 ಪ್ರಶ್ನೆಗಳು
+          </p>
+        </div>
+        <button
+          type="button"
+          className="gold-btn w-full max-w-xs py-3 text-base"
+          onClick={() => {
+            play("click");
+            onHome();
+          }}
+        >
+          ← ಮನೆ
+        </button>
+      </div>
+    );
+  }
+
+  if (completed && result) {
+    return (
+      <div
+        className="screen justify-center items-center text-center gap-6"
+        style={{ position: "relative" }}
+      >
+        <ConfettiRain />
+        <SoundToggle
+          soundOn={soundOn}
+          onToggle={() => {
+            play("click");
+            onToggleSound();
+          }}
+        />
+        <CoinDisplay coins={coins} />
+
+        <div
+          className="text-5xl"
+          style={{ filter: "drop-shadow(0 0 20px oklch(0.82 0.16 85 / 0.6))" }}
+        >
+          🏅
+        </div>
+        <h1
+          className="font-black text-3xl"
+          style={{
+            color: "oklch(0.86 0.18 88)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+          }}
+        >
+          ಸವಾಲು ಪೂರ್ಣ!
+        </h1>
+        <div
+          className="card-dark w-full max-w-xs p-5 space-y-3"
+          style={{ borderColor: "oklch(0.82 0.16 85 / 0.4)" }}
+        >
+          <div className="flex justify-between">
+            <span
+              style={{
+                color: "oklch(0.55 0.01 85)",
+                fontFamily: '"Noto Sans Kannada", sans-serif',
+              }}
+            >
+              ಅಂಕ
+            </span>
+            <span
+              className="title-font font-bold"
+              style={{ color: "oklch(0.82 0.16 85)" }}
+            >
+              {result.score}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span
+              style={{
+                color: "oklch(0.55 0.01 85)",
+                fontFamily: '"Noto Sans Kannada", sans-serif',
+              }}
+            >
+              ಸರಿ ಉತ್ತರ
+            </span>
+            <span style={{ color: "oklch(0.72 0.19 145)" }}>
+              {result.correctCount}/{result.total}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span
+              style={{
+                color: "oklch(0.55 0.01 85)",
+                fontFamily: '"Noto Sans Kannada", sans-serif',
+              }}
+            >
+              ಬೋನಸ್
+            </span>
+            <span
+              className="title-font font-bold"
+              style={{ color: "oklch(0.86 0.18 88)" }}
+            >
+              +100 🪙
+            </span>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="gold-btn w-full max-w-xs py-4 text-base"
+          onClick={() => {
+            play("click");
+            onHome();
+          }}
+        >
+          ← ಮನೆ
+        </button>
+      </div>
+    );
+  }
+
+  if (!started) {
+    return (
+      <div
+        className="screen justify-center items-center text-center gap-6"
+        style={{ position: "relative" }}
+      >
+        <SoundToggle
+          soundOn={soundOn}
+          onToggle={() => {
+            play("click");
+            onToggleSound();
+          }}
+        />
+        <CoinDisplay coins={coins} />
+
+        <div
+          className="text-5xl"
+          style={{ filter: "drop-shadow(0 0 20px oklch(0.82 0.16 85 / 0.5))" }}
+        >
+          🏅
+        </div>
+        <h1
+          className="font-black text-3xl"
+          style={{
+            color: "oklch(0.86 0.18 88)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+            fontWeight: 900,
+          }}
+        >
+          ದೈನಂದಿನ ಸವಾಲು
+        </h1>
+        <div
+          className="card-dark w-full max-w-xs p-5"
+          style={{ borderColor: "oklch(0.82 0.16 85 / 0.3)" }}
+        >
+          <ul
+            className="space-y-2 text-sm text-left"
+            style={{
+              fontFamily: '"Noto Sans Kannada", sans-serif',
+              color: "oklch(0.72 0.01 95)",
+              lineHeight: 1.7,
+            }}
+          >
+            <li>🎯 10 ಯಾದೃಚ್ಛಿಕ ಪ್ರಶ್ನೆಗಳು</li>
+            <li>🪙 ಸರಿ ಉತ್ತರಕ್ಕೆ +20 ನಾಣ್ಯ</li>
+            <li>🏆 ಪೂರ್ಣ ಮಾಡಿದರೆ +100 ಬೋನಸ್</li>
+            <li>⏰ ಪ್ರತಿ ದಿನ ಒಂದೇ ಅವಕಾಶ</li>
+          </ul>
+        </div>
+        <div className="w-full max-w-xs space-y-3">
+          <button
+            type="button"
+            className="gold-btn press-btn w-full py-4 text-lg"
+            onClick={() => {
+              play("click");
+              handleStart();
+            }}
+          >
+            ಸವಾಲು ಶುರು ಮಾಡಿ 🚀
+          </button>
+          <button
+            type="button"
+            className="w-full py-3 text-sm font-medium rounded-xl"
+            style={{
+              background: "oklch(0.13 0.005 85)",
+              color: "oklch(0.55 0.01 85)",
+              border: "1.5px solid oklch(0.22 0.01 85)",
+              fontFamily: '"Noto Sans Kannada", sans-serif',
+              cursor: "pointer",
+              touchAction: "manipulation",
+            }}
+            onClick={() => {
+              play("click");
+              onHome();
+            }}
+          >
+            ← ಹಿಂದೆ
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <QuizScreen
+      key={quizKey}
+      level={1}
+      onComplete={handleComplete}
+      onGameOver={handleDailyGameOver}
+      soundOn={soundOn}
+      onToggleSound={onToggleSound}
+      play={play}
+      coins={coins}
+      awardCoins={awardCoins}
+      spendCoins={spendCoins}
+      isDailyChallenge
+    />
+  );
+}
+
+// ── Shop Screen ────────────────────────────────────────────────────────────
+function ShopScreen({
+  onHome,
+  soundOn,
+  onToggleSound,
+  play,
+  coins,
+  awardCoins,
+}: {
+  onHome: () => void;
+  soundOn: boolean;
+  onToggleSound: () => void;
+  play: (name: "click") => void;
+  coins: number;
+  awardCoins: (amount: number) => void;
+}) {
+  return (
+    <div className="screen gap-6" style={{ position: "relative" }}>
+      <SoundToggle
+        soundOn={soundOn}
+        onToggle={() => {
+          play("click");
+          onToggleSound();
+        }}
+      />
+      <CoinDisplay coins={coins} />
+
+      {/* Header */}
+      <div
+        className="flex items-center gap-3 mb-2"
+        style={{ paddingRight: "8rem" }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            play("click");
+            onHome();
+          }}
+          className="p-2 rounded-lg transition-opacity hover:opacity-70"
+          style={{
+            color: "oklch(0.65 0.01 85)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+          }}
+          aria-label="ಮನೆಗೆ ಹಿಂದೆ"
+        >
+          ←
+        </button>
+        <h1
+          className="font-bold text-2xl flex items-center gap-2"
+          style={{
+            color: "oklch(0.86 0.18 88)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+            fontWeight: 900,
+          }}
+        >
+          🛒 ಅಂಗಡಿ
+        </h1>
+      </div>
+
+      {/* Balance display */}
+      <div
+        className="card-dark p-4 text-center"
+        style={{ borderColor: "oklch(0.82 0.16 85 / 0.4)" }}
+      >
+        <div
+          className="text-3xl font-bold title-font"
+          style={{ color: "oklch(0.86 0.18 88)" }}
+        >
+          🪙 {coins}
+        </div>
+        <div
+          className="text-xs mt-1"
+          style={{
+            color: "oklch(0.55 0.01 85)",
+            fontFamily: '"Noto Sans Kannada", sans-serif',
+          }}
+        >
+          ನಿಮ್ಮ ಪ್ರಸ್ತುತ ನಾಣ್ಯ ಬ್ಯಾಲೆನ್ಸ್
+        </div>
+      </div>
+
+      {/* Shop cards */}
+      <div className="space-y-4">
+        {/* Card 1 – 50 coins */}
+        <div
+          className="card-dark p-5"
+          style={{
+            borderColor: "oklch(0.82 0.16 85 / 0.5)",
+            background: "oklch(0.14 0.04 85 / 0.8)",
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div
+                className="font-black text-xl title-font"
+                style={{ color: "oklch(0.86 0.18 88)" }}
+              >
+                50 🪙 ಗಳಿಸಿ
+              </div>
+              <div
+                className="text-xs mt-0.5"
+                style={{
+                  color: "oklch(0.55 0.01 85)",
+                  fontFamily: '"Noto Sans Kannada", sans-serif',
+                }}
+              >
+                ಜಾಹೀರಾತು ನೋಡಿ ನಾಣ್ಯ ಗಳಿಸಿ
+              </div>
+            </div>
+            <div className="text-3xl">📺</div>
+          </div>
+          <button
+            type="button"
+            className="gold-btn w-full py-3 text-sm"
+            onClick={() => {
+              play("click");
+              alert("ಜಾಹೀರಾತು ಶೀಘ್ರದಲ್ಲೇ ಲಭ್ಯ!");
+              awardCoins(50);
+            }}
+          >
+            ಜಾಹೀರಾತು ನೋಡಿ → +50 🪙
+          </button>
+        </div>
+
+        {/* Card 2 – 100 coins */}
+        <div
+          className="card-dark p-5"
+          style={{
+            borderColor: "oklch(0.82 0.16 85 / 0.5)",
+            background: "oklch(0.14 0.06 85 / 0.8)",
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div
+                className="font-black text-xl title-font"
+                style={{ color: "oklch(0.86 0.18 88)" }}
+              >
+                100 🪙 ಗಳಿಸಿ
+              </div>
+              <div
+                className="text-xs mt-0.5"
+                style={{
+                  color: "oklch(0.55 0.01 85)",
+                  fontFamily: '"Noto Sans Kannada", sans-serif',
+                }}
+              >
+                ದೊಡ್ಡ ಜಾಹೀರಾತು – ಹೆಚ್ಚು ನಾಣ್ಯ!
+              </div>
+            </div>
+            <div className="text-3xl">🎬</div>
+          </div>
+          <button
+            type="button"
+            className="w-full py-3 text-sm font-bold rounded-xl"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.2 0.08 85), oklch(0.16 0.05 85))",
+              color: "oklch(0.86 0.18 88)",
+              border: "1.5px solid oklch(0.82 0.16 85 / 0.6)",
+              fontFamily:
+                '"Bricolage Grotesque", "Noto Sans Kannada", sans-serif',
+              cursor: "pointer",
+              touchAction: "manipulation",
+              letterSpacing: "0.03em",
+              transition: "transform 0.1s ease",
+            }}
+            onClick={() => {
+              play("click");
+              alert("ಜಾಹೀರಾತು ಶೀಘ್ರದಲ್ಲೇ ಲಭ್ಯ!");
+              awardCoins(100);
+            }}
+          >
+            ಜಾಹೀರಾತು ನೋಡಿ (ದೊಡ್ಡದು) → +100 🪙
+          </button>
+        </div>
+      </div>
+
+      {/* Info note */}
+      <div
+        className="text-center text-xs"
+        style={{
+          color: "oklch(0.38 0.01 85)",
+          fontFamily: '"Noto Sans Kannada", sans-serif',
+        }}
+      >
+        ✨ ನಾಣ್ಯಗಳನ್ನು ಪವರ್-ಅಪ್ ಖರೀದಿಸಲು ಬಳಸಿ
+      </div>
+    </div>
+  );
+}
+
 // ── Screen Transition Wrapper ─────────────────────────────────────────────
 function ScreenTransition({
   screenKey,
@@ -1709,16 +2687,39 @@ export default function App() {
     score: number;
     correctCount: number;
     totalCount: number;
+    coinsEarned: number;
   } | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const [finalCorrectCount, setFinalCorrectCount] = useState(0);
   const [finalTotalAsked, setFinalTotalAsked] = useState(0);
+  const [finalCoinsEarned, setFinalCoinsEarned] = useState(0);
   const [bestScore, setBestScoreState] = useState(getBestScore);
   const [unlockedLevels, setUnlockedLevels] = useState(getUnlockedLevels);
   const [quizKey, setQuizKey] = useState(0);
-  // screenTransitionKey forces re-mount of ScreenTransition on every screen change,
-  // triggering the CSS entry animation without any JS delay.
   const [screenTransitionKey, setScreenTransitionKey] = useState(0);
+
+  // Coin system
+  const [coins, setCoins] = useState(getCoins);
+
+  const awardCoins = useCallback((amount: number) => {
+    setCoins((prev) => {
+      const next = prev + amount;
+      saveCoins(next);
+      return next;
+    });
+  }, []);
+
+  const spendCoins = useCallback((amount: number): boolean => {
+    let success = false;
+    setCoins((prev) => {
+      if (prev < amount) return prev;
+      success = true;
+      const next = prev - amount;
+      saveCoins(next);
+      return next;
+    });
+    return success;
+  }, []);
 
   const { soundOn, toggleSound, play } = useSoundEngine();
 
@@ -1746,21 +2747,40 @@ export default function App() {
   );
 
   const handleLevelComplete = useCallback(
-    (score: number, correctCount: number, totalCount: number) => {
-      setQuizResult({ score, correctCount, totalCount });
+    (
+      score: number,
+      correctCount: number,
+      totalCount: number,
+      sessionCoins: number,
+    ) => {
+      // Award level complete bonus
+      awardCoins(50);
+      const totalCoinsEarned = sessionCoins + 50;
+      setQuizResult({
+        score,
+        correctCount,
+        totalCount,
+        coinsEarned: totalCoinsEarned,
+      });
       setBestScore(score);
       setBestScoreState(getBestScore());
       setUnlockedLevels(getUnlockedLevels());
       navigateTo("levelComplete");
     },
-    [navigateTo],
+    [navigateTo, awardCoins],
   );
 
   const handleGameOver = useCallback(
-    (score: number, correctCount: number, totalAsked: number) => {
+    (
+      score: number,
+      correctCount: number,
+      totalAsked: number,
+      sessionCoins: number,
+    ) => {
       setFinalScore(score);
       setFinalCorrectCount(correctCount);
       setFinalTotalAsked(totalAsked);
+      setFinalCoinsEarned(sessionCoins);
       setBestScore(score);
       setBestScoreState(getBestScore());
       navigateTo("gameOver");
@@ -1778,6 +2798,13 @@ export default function App() {
     navigateTo("home");
   }, [navigateTo]);
 
+  const handleDailyChallenge = useCallback(
+    () => navigateTo("dailyChallenge"),
+    [navigateTo],
+  );
+
+  const handleShop = useCallback(() => navigateTo("shop"), [navigateTo]);
+
   const renderScreen = () => {
     switch (screen) {
       case "home":
@@ -1788,6 +2815,9 @@ export default function App() {
             soundOn={soundOn}
             onToggleSound={toggleSound}
             play={play}
+            coins={coins}
+            onDailyChallenge={handleDailyChallenge}
+            onShop={handleShop}
           />
         );
       case "levelSelect":
@@ -1799,6 +2829,7 @@ export default function App() {
             soundOn={soundOn}
             onToggleSound={toggleSound}
             play={play}
+            coins={coins}
           />
         );
       case "quiz":
@@ -1811,6 +2842,9 @@ export default function App() {
             soundOn={soundOn}
             onToggleSound={toggleSound}
             play={play}
+            coins={coins}
+            awardCoins={awardCoins}
+            spendCoins={spendCoins}
           />
         );
       case "levelComplete":
@@ -1820,11 +2854,13 @@ export default function App() {
             score={quizResult.score}
             correctCount={quizResult.correctCount}
             totalCount={quizResult.totalCount}
+            coinsEarned={quizResult.coinsEarned}
             onPlayAgain={handlePlayAgain}
             onHome={handleHome}
             soundOn={soundOn}
             onToggleSound={toggleSound}
             play={play}
+            coins={coins}
           />
         ) : null;
       case "gameOver":
@@ -1833,11 +2869,37 @@ export default function App() {
             score={finalScore}
             correctCount={finalCorrectCount}
             totalAsked={finalTotalAsked}
+            coinsEarned={finalCoinsEarned}
             onPlayAgain={handlePlayAgain}
             onHome={handleHome}
             soundOn={soundOn}
             onToggleSound={toggleSound}
             play={play}
+            coins={coins}
+          />
+        );
+      case "dailyChallenge":
+        return (
+          <DailyChallengeScreen
+            onHome={handleHome}
+            soundOn={soundOn}
+            onToggleSound={toggleSound}
+            play={play}
+            coins={coins}
+            awardCoins={awardCoins}
+            spendCoins={spendCoins}
+            onGameOver={handleGameOver}
+          />
+        );
+      case "shop":
+        return (
+          <ShopScreen
+            onHome={handleHome}
+            soundOn={soundOn}
+            onToggleSound={toggleSound}
+            play={play}
+            coins={coins}
+            awardCoins={awardCoins}
           />
         );
       default:

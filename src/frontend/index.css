@@ -509,3 +509,86 @@
 .gameover-play-btn {
   animation: gameover-glow 2s ease-in-out infinite !important;
 }
+
+/* ── Floating Coin Toast ────────────────────────────── */
+@keyframes coin-float {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-60px); }
+}
+
+.coin-toast {
+  position: fixed;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: oklch(0.86 0.18 88);
+  pointer-events: none;
+  z-index: 300;
+  animation: coin-float 1.2s ease-out forwards;
+  font-family: "Bricolage Grotesque", "Noto Sans Kannada", sans-serif;
+  text-shadow: 0 0 10px oklch(0.82 0.16 85 / 0.5);
+}
+
+/* ── Streak Banner ─────────────────────────────────── */
+@keyframes streak-pop {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.7) translateY(10px); }
+  40%  { opacity: 1; transform: translateX(-50%) scale(1.1) translateY(-4px); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1) translateY(-20px); }
+}
+
+.streak-banner {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: oklch(0.86 0.18 88);
+  text-shadow: 0 0 20px oklch(0.82 0.16 85 / 0.8), 0 2px 8px oklch(0 0 0 / 0.6);
+  pointer-events: none;
+  z-index: 250;
+  animation: streak-pop 1.5s ease-out forwards;
+  white-space: nowrap;
+  font-family: "Bricolage Grotesque", sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* ── Power-up buttons ──────────────────────────────── */
+.powerup-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  background: oklch(0.16 0.03 85);
+  border: 1.5px solid oklch(0.82 0.16 85 / 0.4);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, background 0.1s ease, box-shadow 0.1s ease;
+  min-width: 64px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.powerup-btn:active:not(:disabled) {
+  transform: scale(0.92);
+  box-shadow: 0 0 0 2px oklch(0.82 0.16 85 / 0.4);
+}
+
+.powerup-btn:hover:not(:disabled) {
+  background: oklch(0.2 0.05 85);
+  box-shadow: 0 2px 12px oklch(0.82 0.16 85 / 0.2);
+}
+
+.powerup-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.powerup-cost {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: oklch(0.82 0.16 85);
+  font-family: "Bricolage Grotesque", sans-serif;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
