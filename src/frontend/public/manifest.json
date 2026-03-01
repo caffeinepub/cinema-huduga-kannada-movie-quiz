@@ -1,36 +1,27 @@
 {
-  "name": "ಸಿನಿಮಾ ಹುಡುಗ – ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ",
-  "short_name": "Cinema Huduga",
-  "description": "ಕನ್ನಡ ಸಿನಿಮಾ ಪ್ರಶ್ನೋತ್ತರ ಆಟ – Test your Kannada cinema knowledge!",
+  "name": "CiniQ – Kannada Movie Quiz",
+  "short_name": "CiniQ",
+  "description": "CiniQ – ಕನ್ನಡ ಸಿನಿಮಾ ಕ್ವಿಜ್ ಗೇಮ್! Test your Kannada cinema knowledge!",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#D4AF37",
+  "background_color": "#EC4899",
+  "theme_color": "#7C3AED",
   "lang": "kn",
   "categories": ["games", "entertainment"],
   "icons": [
     {
-      "src": "/assets/uploads/ChatGPT-Image-Mar-1-2026-02_58_16-AM-1.png",
+      "src": "/assets/generated/ciniq-icon.dim_512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/uploads/ChatGPT-Image-Mar-1-2026-02_58_16-AM-1.png",
+      "src": "/assets/generated/ciniq-icon.dim_512x512.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/assets/uploads/ChatGPT-Image-Mar-1-2026-02_58_16-AM-1.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "ಸಿನಿಮಾ ಹುಡುಗ ಹೋಮ್ ಸ್ಕ್ರೀನ್"
     }
   ],
   "prefer_related_applications": false

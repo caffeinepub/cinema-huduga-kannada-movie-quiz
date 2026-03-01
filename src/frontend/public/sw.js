@@ -1,7 +1,7 @@
-// Cinema Huduga – Service Worker
+// CiniQ – Service Worker
 // Cache-first strategy for offline play
 
-const CACHE_NAME = 'cinema-huduga-v1';
+const CACHE_NAME = 'ciniq-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
